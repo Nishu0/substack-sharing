@@ -287,7 +287,42 @@ export default function Home() {
               <p>fetches opengraph metadata from substack</p>
               <p>makes your posts look better when shared</p>
             </div>
+
+            <motion.a
+              href="https://x.com/intent/tweet?text=make%20your%20substack%20x%20preview%20for%20free%20at%20www.substack.lol%20from%20%40itsnishu"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-zinc-900/50 hover:bg-zinc-800/50 border border-zinc-800 hover:border-zinc-700 rounded-xl text-zinc-300 hover:text-white transition-all shadow-lg mt-4"
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+            >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+              </svg>
+              Share on X
+            </motion.a>
           </motion.div>
+
+          <motion.footer
+            className="text-center text-sm text-zinc-600 pt-8 border-t border-zinc-800/50 mt-12"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 1 }}
+          >
+            <p className="mb-2">Share your Substack preview on X</p>
+            <p>
+              Made by{' '}
+              <a
+                href="https://x.com/itsnishu"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-orange-500 hover:text-orange-400 transition-colors"
+              >
+                Nisarg Thakkar
+              </a>
+            </p>
+          </motion.footer>
         </div>
       </div>
     </>
