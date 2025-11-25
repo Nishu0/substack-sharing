@@ -25,23 +25,30 @@ async function fetchSubstackMetadata(username: string, slug: string) {
 
     const html = await response.text();
 
-    // extract opengraph tags - handle both formats and HTML entities
+    // extract opengraph tags - handle various HTML formats
     const extractContent = (property: string, name?: string) => {
+      // match meta tags with various attribute orders and spacing
       const patterns = [
-        new RegExp(`<meta\\s+property=["']${property}["']\\s+content=["']([^"']+)["']`, 'i'),
-        new RegExp(`<meta\\s+content=["']([^"']+)["']\\s+property=["']${property}["']`, 'i'),
+        // property="..." content="..."
+        new RegExp(`<meta[^>]*?property=["']${property.replace(/:/g, '\\:')}["'][^>]*?content=["']([^"']*?)["']`, 'is'),
+        // content="..." property="..."
+        new RegExp(`<meta[^>]*?content=["']([^"']*?)["'][^>]*?property=["']${property.replace(/:/g, '\\:')}["']`, 'is'),
       ];
 
       if (name) {
         patterns.push(
-          new RegExp(`<meta\\s+name=["']${name}["']\\s+content=["']([^"']+)["']`, 'i'),
-          new RegExp(`<meta\\s+content=["']([^"']+)["']\\s+name=["']${name}["']`, 'i')
+          // name="..." content="..."
+          new RegExp(`<meta[^>]*?name=["']${name}["'][^>]*?content=["']([^"']*?)["']`, 'is'),
+          // content="..." name="..."
+          new RegExp(`<meta[^>]*?content=["']([^"']*?)["'][^>]*?name=["']${name}["']`, 'is')
         );
       }
 
       for (const pattern of patterns) {
         const match = html.match(pattern);
-        if (match) return match[1];
+        if (match && match[1]) {
+          return match[1].trim();
+        }
       }
       return null;
     };
@@ -123,10 +130,17 @@ export default async function SubstackRedirect({ params, searchParams }: Props) 
   const { username, slug } = await params;
   const search = await searchParams;
 
+  const metadata = await fetchSubstackMetadata(username, slug);
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://substack.lol';
+  const currentUrl = `${baseUrl}/pub/${username}/p/${slug}`;
+
   // rebuild the full substack url with any query params
   const substackUrl = `https://open.substack.com/pub/${username}/p/${slug}`;
   const queryString = new URLSearchParams(search as Record<string, string>).toString();
   const fullUrl = queryString ? `${substackUrl}?${queryString}` : substackUrl;
+
+  // log for debugging
+  console.log('Fetched metadata for', substackUrl, ':', metadata);
 
   return (
     <>

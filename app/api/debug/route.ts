@@ -27,21 +27,28 @@ export async function GET(request: NextRequest) {
     const html = await response.text();
 
     const extractContent = (property: string, name?: string) => {
+      // match meta tags with various attribute orders and spacing
       const patterns = [
-        new RegExp(`<meta\\s+property=["']${property}["']\\s+content=["']([^"']+)["']`, 'i'),
-        new RegExp(`<meta\\s+content=["']([^"']+)["']\\s+property=["']${property}["']`, 'i'),
+        // property="..." content="..."
+        new RegExp(`<meta[^>]*?property=["']${property.replace(/:/g, '\\:')}["'][^>]*?content=["']([^"']*?)["']`, 'is'),
+        // content="..." property="..."
+        new RegExp(`<meta[^>]*?content=["']([^"']*?)["'][^>]*?property=["']${property.replace(/:/g, '\\:')}["']`, 'is'),
       ];
 
       if (name) {
         patterns.push(
-          new RegExp(`<meta\\s+name=["']${name}["']\\s+content=["']([^"']+)["']`, 'i'),
-          new RegExp(`<meta\\s+content=["']([^"']+)["']\\s+name=["']${name}["']`, 'i')
+          // name="..." content="..."
+          new RegExp(`<meta[^>]*?name=["']${name}["'][^>]*?content=["']([^"']*?)["']`, 'is'),
+          // content="..." name="..."
+          new RegExp(`<meta[^>]*?content=["']([^"']*?)["'][^>]*?name=["']${name}["']`, 'is')
         );
       }
 
       for (const pattern of patterns) {
         const match = html.match(pattern);
-        if (match) return match[1];
+        if (match && match[1]) {
+          return match[1].trim();
+        }
       }
       return null;
     };
@@ -55,10 +62,16 @@ export async function GET(request: NextRequest) {
       twitterCard: extractContent('twitter:card'),
     };
 
+    // grab a sample of meta tags for debugging
+    const metaSample = html.match(/<meta[^>]*>/gi)?.slice(0, 20) || [];
+
     return NextResponse.json({
       success: true,
       metadata,
       htmlLength: html.length,
+      debug: {
+        sampleMetaTags: metaSample,
+      },
     });
   } catch (error) {
     return NextResponse.json(
