@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import { headers } from 'next/headers';
 
 type Props = {
   params: Promise<{ username: string; slug: string }>;
@@ -125,10 +126,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 // this page serves the metadata for crawlers, then redirects real users
-// crawlers (like X) read the HTML/meta tags but don't execute JS
+// bots get more time to parse, real users redirect immediately
 export default async function SubstackRedirect({ params, searchParams }: Props) {
   const { username, slug } = await params;
   const search = await searchParams;
+
+  const headersList = await headers();
+  const userAgent = headersList.get('user-agent') || '';
 
   const metadata = await fetchSubstackMetadata(username, slug);
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://substack.lol';
@@ -139,13 +143,19 @@ export default async function SubstackRedirect({ params, searchParams }: Props) 
   const queryString = new URLSearchParams(search as Record<string, string>).toString();
   const fullUrl = queryString ? `${substackUrl}?${queryString}` : substackUrl;
 
+  // detect bots that need time to parse content
+  const isBot = /bot|crawler|spider|crawling|telegram|whatsapp|facebook|twitter|slack/i.test(userAgent);
+  const redirectDelay = isBot ? 5 : 0;
+
   // log for debugging
-  console.log('Fetched metadata for', substackUrl, ':', metadata);
+  console.log('User-Agent:', userAgent, 'isBot:', isBot, 'delay:', redirectDelay);
 
   return (
     <>
-      <meta httpEquiv="refresh" content={`0;url=${fullUrl}`} />
-      <script dangerouslySetInnerHTML={{ __html: `window.location.replace("${fullUrl}");` }} />
+      <meta httpEquiv="refresh" content={`${redirectDelay};url=${fullUrl}`} />
+      {!isBot && (
+        <script dangerouslySetInnerHTML={{ __html: `setTimeout(function(){window.location.replace("${fullUrl}");}, 100);` }} />
+      )}
       <div style={{
         display: 'flex',
         alignItems: 'center',
