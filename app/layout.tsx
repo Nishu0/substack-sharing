@@ -14,6 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://substack.lol'),
   title: "substack.lol - better previews for X",
   description: "wrap your substack links for better opengraph previews on X/Twitter",
 };
